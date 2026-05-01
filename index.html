@@ -19,23 +19,23 @@
 
       <div class="guide-list">
         <div>
-          <strong>1. 収入・支出を分けて入力</strong>
-          <p>おこづかいをもらった時は収入、買い物した時は支出から記録します。</p>
+          <strong>1. ホームですぐ記録</strong>
+          <p>アプリを開いたら、すぐに支出や収入を入力できます。</p>
         </div>
 
         <div>
-          <strong>2. カテゴリーを選ぶ</strong>
-          <p>食費・交通費・遊びなどをアイコン付きボタンから選べます。</p>
+          <strong>2. 詳細は必要な時だけ</strong>
+          <p>支払い方法・日付・メモは「詳細を入力」から開けます。</p>
         </div>
 
         <div>
-          <strong>3. 日・週・月・期間指定で確認</strong>
-          <p>タブを切り替えると、期間ごとの収支やグラフを確認できます。</p>
+          <strong>3. グラフで確認</strong>
+          <p>日・週・月・期間指定で、棒グラフや円グラフを見られます。</p>
         </div>
 
         <div>
           <strong>4. データは保存される</strong>
-          <p>記録はブラウザに保存されます。バックアップもできます。</p>
+          <p>記録はブラウザに保存されます。設定からバックアップもできます。</p>
         </div>
       </div>
 
@@ -46,325 +46,332 @@
   </div>
 
   <div class="app">
-    <header class="header">
+    <header class="app-header">
       <div>
         <h1>おこづかいメモ</h1>
-        <p>収入・支出を記録して、使いすぎを防ごう</p>
+        <p>すぐ記録して、今月の使いすぎを防ごう</p>
       </div>
     </header>
 
     <main>
-      <section class="today-status-card">
-        <div class="today-status-top">
-          <div>
-            <p class="status-label">今日の状況</p>
-            <h2 id="todayStatusTitle">確認中...</h2>
+      <section id="homeScreen" class="screen active-screen">
+        <section class="quick-record-card">
+          <div class="section-header">
+            <div>
+              <p class="section-label">クイック記録</p>
+              <h2 id="quickRecordTitle">支出を記録</h2>
+            </div>
           </div>
 
-          <div id="todayStatusBadge" class="status-badge">
-            未記録
-          </div>
-        </div>
+          <div class="input-mode-tabs">
+            <button id="expenseModeButton" class="input-mode-button active" type="button">
+              支出
+            </button>
 
-        <div class="today-status-grid">
-          <div>
-            <p>今日の収入</p>
-            <strong id="todayIncome">0円</strong>
-          </div>
-
-          <div>
-            <p>今日の支出</p>
-            <strong id="todayExpense">0円</strong>
+            <button id="incomeModeButton" class="input-mode-button" type="button">
+              収入
+            </button>
           </div>
 
-          <div>
-            <p>今日の収支</p>
-            <strong id="todayBalance">0円</strong>
-          </div>
-        </div>
+          <form id="quickRecordForm">
+            <div class="amount-box">
+              <label for="quickAmount">金額</label>
+              <div class="amount-input-row">
+                <input id="quickAmount" type="number" min="1" placeholder="500" required />
+                <span>円</span>
+              </div>
+            </div>
 
-        <p id="lastAddedText" class="last-added-text"></p>
+            <div class="form-group">
+              <label>カテゴリー</label>
+              <div id="categoryButtons" class="category-buttons"></div>
+            </div>
+
+            <button id="toggleDetailButton" class="detail-toggle-button" type="button">
+              ＋ 詳細を入力
+            </button>
+
+            <div id="detailFields" class="detail-fields hidden">
+              <div class="form-group">
+                <label id="paymentMethodLabel">支払い方法</label>
+                <select id="quickPaymentMethod" required></select>
+              </div>
+
+              <div class="form-group">
+                <label>日付</label>
+                <input id="quickDate" type="date" required />
+              </div>
+
+              <div class="form-group">
+                <label>メモ</label>
+                <input id="quickMemo" type="text" placeholder="例：コンビニで昼ごはん" />
+              </div>
+            </div>
+
+            <button id="submitRecordButton" type="submit" class="primary-button expense-button">
+              支出を追加
+            </button>
+          </form>
+
+          <p id="lastAddedText" class="last-added-text"></p>
+        </section>
+
+        <section class="status-card">
+          <div class="status-top">
+            <div>
+              <p class="section-label">今月の状況</p>
+              <h2 id="monthStatusTitle">確認中...</h2>
+            </div>
+
+            <div id="monthStatusBadge" class="status-badge">
+              未記録
+            </div>
+          </div>
+
+          <div class="status-grid">
+            <div>
+              <p>今月の収入</p>
+              <strong id="monthIncome">0円</strong>
+            </div>
+
+            <div>
+              <p>今月の支出</p>
+              <strong id="monthExpenseStatus">0円</strong>
+            </div>
+
+            <div>
+              <p>今月の収支</p>
+              <strong id="monthBalance">0円</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>今月の予算</h2>
+
+          <div class="form-group">
+            <label>今月使える金額</label>
+            <input id="monthlyBudget" type="number" min="0" placeholder="例：10000" />
+          </div>
+
+          <button id="saveBudgetButton" class="secondary-button">
+            予算を保存
+          </button>
+
+          <div class="budget-box">
+            <div>
+              <p>今月の予算</p>
+              <h3 id="budgetAmount">0円</h3>
+            </div>
+
+            <div>
+              <p>今月の支出</p>
+              <h3 id="monthExpense">0円</h3>
+            </div>
+
+            <div>
+              <p>残り予算</p>
+              <h3 id="remainingBudget">0円</h3>
+            </div>
+          </div>
+
+          <div class="budget-bar">
+            <div id="budgetProgress" class="budget-progress"></div>
+          </div>
+
+          <p id="budgetMessage" class="status-text"></p>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>最近の履歴</h2>
+            <button id="showAllHistoryButton" class="text-button" type="button">
+              すべて見る
+            </button>
+          </div>
+
+          <div id="recentHistoryList" class="history-list"></div>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="section-header">
-          <h2>記録する</h2>
-        </div>
-
-        <div class="input-mode-tabs">
-          <button id="expenseModeButton" class="input-mode-button active" type="button">
-            支出を入力
-          </button>
-
-          <button id="incomeModeButton" class="input-mode-button" type="button">
-            収入を入力
-          </button>
-        </div>
-
-        <form id="expenseForm" class="money-form">
-          <h3 class="form-title expense">支出の記録</h3>
-
-          <div class="form-group">
-            <label>金額</label>
-            <input id="expenseAmount" type="number" min="1" placeholder="例：500" required />
-          </div>
-
-          <div class="form-group">
-            <label>カテゴリー</label>
-            <div id="expenseCategoryButtons" class="category-buttons"></div>
-          </div>
-
-          <div class="form-group">
-            <label>支払い方法</label>
-            <select id="expensePaymentMethod" required>
-              <option value="PayPay">PayPay</option>
-              <option value="現金">現金</option>
-              <option value="クレジットカード">クレジットカード</option>
-              <option value="交通系IC">交通系IC</option>
-              <option value="その他">その他</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>日付</label>
-            <input id="expenseDate" type="date" required />
-          </div>
-
-          <div class="form-group">
-            <label>メモ</label>
-            <input id="expenseMemo" type="text" placeholder="例：コンビニで昼ごはん" />
-          </div>
-
-          <button type="submit" class="primary-button expense-button">
-            支出を追加
-          </button>
-        </form>
-
-        <form id="incomeForm" class="money-form hidden">
-          <h3 class="form-title income">収入の記録</h3>
-
-          <div class="form-group">
-            <label>金額</label>
-            <input id="incomeAmount" type="number" min="1" placeholder="例：5000" required />
-          </div>
-
-          <div class="form-group">
-            <label>カテゴリー</label>
-            <div id="incomeCategoryButtons" class="category-buttons"></div>
-          </div>
-
-          <div class="form-group">
-            <label>受け取り方法</label>
-            <select id="incomePaymentMethod" required>
-              <option value="現金">現金</option>
-              <option value="PayPay">PayPay</option>
-              <option value="銀行">銀行</option>
-              <option value="その他">その他</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>日付</label>
-            <input id="incomeDate" type="date" required />
-          </div>
-
-          <div class="form-group">
-            <label>メモ</label>
-            <input id="incomeMemo" type="text" placeholder="例：今月のおこづかい" />
-          </div>
-
-          <button type="submit" class="primary-button income-button">
-            収入を追加
-          </button>
-        </form>
-      </section>
-
-      <section class="card">
-        <h2>今月の予算</h2>
-
-        <div class="form-group">
-          <label>今月使える金額</label>
-          <input id="monthlyBudget" type="number" min="0" placeholder="例：10000" />
-        </div>
-
-        <button id="saveBudgetButton" class="secondary-button">
-          予算を保存
-        </button>
-
-        <div class="budget-box">
-          <div>
-            <p>今月の予算</p>
-            <h3 id="budgetAmount">0円</h3>
-          </div>
-
-          <div>
-            <p>今月の支出</p>
-            <h3 id="monthExpense">0円</h3>
-          </div>
-
-          <div>
-            <p>残り予算</p>
-            <h3 id="remainingBudget">0円</h3>
-          </div>
-        </div>
-
-        <div class="budget-bar">
-          <div id="budgetProgress" class="budget-progress"></div>
-        </div>
-
-        <p id="budgetMessage" class="status-text"></p>
-      </section>
-
-      <section class="card">
-        <h2>データ管理</h2>
-
-        <p class="small-text">
-          CSVは表計算ソフト用、JSONはこのアプリに完全復元するためのバックアップ用です。
-        </p>
-
-        <div class="data-buttons">
-          <button id="exportCsvButton" class="secondary-button">
-            CSVエクスポート
-          </button>
-
-          <label class="file-button">
-            CSVインポート
-            <input id="importCsvInput" type="file" accept=".csv,text/csv" />
-          </label>
-
-          <button id="exportJsonButton" class="secondary-button">
-            JSONエクスポート
-          </button>
-
-          <label class="file-button">
-            JSONインポート
-            <input id="importJsonInput" type="file" accept="application/json,.json" />
-          </label>
-        </div>
-
-        <p id="dataStatus" class="status-text"></p>
-      </section>
-
-      <section class="card">
-        <h2>通知設定</h2>
-
-        <p class="small-text">
-          毎日決まった時間に「今日使ったお金を記録しよう」と通知します。
-        </p>
-
-        <div class="form-group">
-          <label>通知する時間</label>
-          <input id="reminderTime" type="time" />
-        </div>
-
-        <button id="saveReminderButton" class="secondary-button">
-          通知時間を保存
-        </button>
-
-        <button id="testNotificationButton" class="ghost-button">
-          テスト通知を出す
-        </button>
-
-        <p id="reminderStatus" class="status-text"></p>
-      </section>
-
-      <section class="card">
-        <div class="section-header">
+      <section id="chartScreen" class="screen">
+        <section class="card">
           <h2>期間別の収支</h2>
-        </div>
 
-        <div class="range-tabs">
-          <button class="range-tab active" data-range="day" type="button">
-            日
-          </button>
+          <div class="range-tabs">
+            <button class="range-tab active" data-range="day" type="button">
+              日
+            </button>
 
-          <button class="range-tab" data-range="week" type="button">
-            週
-          </button>
+            <button class="range-tab" data-range="week" type="button">
+              週
+            </button>
 
-          <button class="range-tab" data-range="month" type="button">
-            月
-          </button>
+            <button class="range-tab" data-range="month" type="button">
+              月
+            </button>
 
-          <button class="range-tab" data-range="custom" type="button">
-            期間指定
-          </button>
-        </div>
-
-        <p id="rangeDateText" class="range-date-text">
-          表示期間を確認中...
-        </p>
-
-        <div id="customRangeBox" class="custom-range-box hidden">
-          <div class="form-group">
-            <label>開始日</label>
-            <input id="customStartDate" type="date" />
+            <button class="range-tab" data-range="custom" type="button">
+              期間指定
+            </button>
           </div>
 
-          <div class="form-group">
-            <label>終了日</label>
-            <input id="customEndDate" type="date" />
+          <p id="rangeDateText" class="range-date-text">
+            表示期間を確認中...
+          </p>
+
+          <div id="customRangeBox" class="custom-range-box hidden">
+            <div class="form-group">
+              <label>開始日</label>
+              <input id="customStartDate" type="date" />
+            </div>
+
+            <div class="form-group">
+              <label>終了日</label>
+              <input id="customEndDate" type="date" />
+            </div>
+
+            <button id="applyCustomRangeButton" class="secondary-button" type="button">
+              この期間で見る
+            </button>
+
+            <p id="customRangeStatus" class="small-text"></p>
           </div>
 
-          <button id="applyCustomRangeButton" class="secondary-button" type="button">
-            この期間で見る
-          </button>
+          <div class="summary-grid">
+            <div class="summary-card income-card">
+              <p>収入</p>
+              <h3 id="rangeIncome">0円</h3>
+            </div>
 
-          <p id="customRangeStatus" class="small-text"></p>
-        </div>
+            <div class="summary-card expense-card">
+              <p>支出</p>
+              <h3 id="rangeExpense">0円</h3>
+            </div>
 
-        <div class="summary-grid">
-          <div class="summary-card income-card">
-            <p>収入</p>
-            <h3 id="rangeIncome">0円</h3>
+            <div class="summary-card balance-card">
+              <p>収支</p>
+              <h3 id="rangeBalance">0円</h3>
+            </div>
           </div>
+        </section>
 
-          <div class="summary-card expense-card">
-            <p>支出</p>
-            <h3 id="rangeExpense">0円</h3>
-          </div>
-
-          <div class="summary-card balance-card">
-            <p>収支</p>
-            <h3 id="rangeBalance">0円</h3>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="section-header">
+        <section class="card">
           <h2>グラフ</h2>
-        </div>
 
-        <div class="chart-type-tabs">
-          <button id="barChartTab" class="chart-type-tab active" data-chart-type="bar" type="button">
-            棒グラフ
-          </button>
+          <div class="chart-type-tabs">
+            <button class="chart-type-tab active" data-chart-type="bar" type="button">
+              棒グラフ
+            </button>
 
-          <button id="pieChartTab" class="chart-type-tab" data-chart-type="pie" type="button">
-            円グラフ
-          </button>
-        </div>
+            <button class="chart-type-tab" data-chart-type="pie" type="button">
+              円グラフ
+            </button>
+          </div>
 
-        <div class="chart-info-box">
-          <p id="chartTitle">収入と支出の比較</p>
-          <span id="chartDescription">選択中の期間の収入・支出を棒グラフで表示します。</span>
-        </div>
+          <div class="chart-info-box">
+            <p id="chartTitle">収入と支出の比較</p>
+            <span id="chartDescription">選択中の期間の収入・支出を棒グラフで表示します。</span>
+          </div>
 
-        <canvas id="mainChart"></canvas>
+          <canvas id="mainChart"></canvas>
 
-        <p id="chartEmptyText" class="small-text"></p>
+          <p id="chartEmptyText" class="small-text"></p>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>すべての履歴</h2>
+          </div>
+
+          <div id="historyList" class="history-list"></div>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="section-header">
-          <h2>履歴</h2>
-          <button id="clearAllButton" class="danger-button">全削除</button>
-        </div>
+      <section id="settingsScreen" class="screen">
+        <section class="card">
+          <h2>通知設定</h2>
 
-        <div id="historyList" class="history-list"></div>
+          <p class="small-text">
+            毎日決まった時間に「今日使ったお金を記録しよう」と通知します。
+          </p>
+
+          <div class="form-group">
+            <label>通知する時間</label>
+            <input id="reminderTime" type="time" />
+          </div>
+
+          <button id="saveReminderButton" class="secondary-button">
+            通知時間を保存
+          </button>
+
+          <button id="testNotificationButton" class="ghost-button">
+            テスト通知を出す
+          </button>
+
+          <p id="reminderStatus" class="status-text"></p>
+        </section>
+
+        <section class="card">
+          <h2>データ管理</h2>
+
+          <p class="small-text">
+            CSVは表計算ソフト用、JSONはこのアプリに完全復元するためのバックアップ用です。
+          </p>
+
+          <div class="data-buttons">
+            <button id="exportCsvButton" class="secondary-button">
+              CSVエクスポート
+            </button>
+
+            <label class="file-button">
+              CSVインポート
+              <input id="importCsvInput" type="file" accept=".csv,text/csv" />
+            </label>
+
+            <button id="exportJsonButton" class="secondary-button">
+              JSONエクスポート
+            </button>
+
+            <label class="file-button">
+              JSONインポート
+              <input id="importJsonInput" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+
+          <p id="dataStatus" class="status-text"></p>
+        </section>
+
+        <section class="card">
+          <h2>その他</h2>
+
+          <button id="openGuideButton" class="ghost-button" type="button">
+            使い方ガイドをもう一度見る
+          </button>
+
+          <button id="clearAllButton" class="danger-wide-button" type="button">
+            すべての記録を削除
+          </button>
+        </section>
       </section>
     </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-button active" data-screen="homeScreen" type="button">
+        <span>🏠</span>
+        ホーム
+      </button>
+
+      <button class="nav-button" data-screen="chartScreen" type="button">
+        <span>📊</span>
+        グラフ
+      </button>
+
+      <button class="nav-button" data-screen="settingsScreen" type="button">
+        <span>⚙️</span>
+        設定
+      </button>
+    </nav>
   </div>
 
   <script src="app.js"></script>

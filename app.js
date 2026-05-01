@@ -3,30 +3,42 @@ const REMINDER_KEY = "moneyReminderTime";
 const BUDGET_KEY = "monthlyBudget";
 const GUIDE_KEY = "hasSeenMoneyAppGuide";
 
+const homeScreen = document.getElementById("homeScreen");
+const chartScreen = document.getElementById("chartScreen");
+const settingsScreen = document.getElementById("settingsScreen");
+const navButtons = document.querySelectorAll(".nav-button");
+
 const expenseModeButton = document.getElementById("expenseModeButton");
 const incomeModeButton = document.getElementById("incomeModeButton");
-
-const expenseForm = document.getElementById("expenseForm");
-const incomeForm = document.getElementById("incomeForm");
-
-const expenseAmountInput = document.getElementById("expenseAmount");
-const expensePaymentMethodInput = document.getElementById("expensePaymentMethod");
-const expenseDateInput = document.getElementById("expenseDate");
-const expenseMemoInput = document.getElementById("expenseMemo");
-const expenseCategoryButtons = document.getElementById("expenseCategoryButtons");
-
-const incomeAmountInput = document.getElementById("incomeAmount");
-const incomePaymentMethodInput = document.getElementById("incomePaymentMethod");
-const incomeDateInput = document.getElementById("incomeDate");
-const incomeMemoInput = document.getElementById("incomeMemo");
-const incomeCategoryButtons = document.getElementById("incomeCategoryButtons");
-
-const todayStatusTitle = document.getElementById("todayStatusTitle");
-const todayStatusBadge = document.getElementById("todayStatusBadge");
-const todayIncome = document.getElementById("todayIncome");
-const todayExpense = document.getElementById("todayExpense");
-const todayBalance = document.getElementById("todayBalance");
+const quickRecordTitle = document.getElementById("quickRecordTitle");
+const quickRecordForm = document.getElementById("quickRecordForm");
+const quickAmountInput = document.getElementById("quickAmount");
+const quickPaymentMethodInput = document.getElementById("quickPaymentMethod");
+const quickDateInput = document.getElementById("quickDate");
+const quickMemoInput = document.getElementById("quickMemo");
+const paymentMethodLabel = document.getElementById("paymentMethodLabel");
+const categoryButtons = document.getElementById("categoryButtons");
+const toggleDetailButton = document.getElementById("toggleDetailButton");
+const detailFields = document.getElementById("detailFields");
+const submitRecordButton = document.getElementById("submitRecordButton");
 const lastAddedText = document.getElementById("lastAddedText");
+
+const monthStatusTitle = document.getElementById("monthStatusTitle");
+const monthStatusBadge = document.getElementById("monthStatusBadge");
+const monthIncome = document.getElementById("monthIncome");
+const monthExpenseStatus = document.getElementById("monthExpenseStatus");
+const monthBalance = document.getElementById("monthBalance");
+
+const monthlyBudgetInput = document.getElementById("monthlyBudget");
+const saveBudgetButton = document.getElementById("saveBudgetButton");
+const budgetAmount = document.getElementById("budgetAmount");
+const monthExpense = document.getElementById("monthExpense");
+const remainingBudget = document.getElementById("remainingBudget");
+const budgetProgress = document.getElementById("budgetProgress");
+const budgetMessage = document.getElementById("budgetMessage");
+
+const recentHistoryList = document.getElementById("recentHistoryList");
+const showAllHistoryButton = document.getElementById("showAllHistoryButton");
 
 const rangeIncome = document.getElementById("rangeIncome");
 const rangeExpense = document.getElementById("rangeExpense");
@@ -54,14 +66,6 @@ const saveReminderButton = document.getElementById("saveReminderButton");
 const testNotificationButton = document.getElementById("testNotificationButton");
 const reminderStatus = document.getElementById("reminderStatus");
 
-const monthlyBudgetInput = document.getElementById("monthlyBudget");
-const saveBudgetButton = document.getElementById("saveBudgetButton");
-const budgetAmount = document.getElementById("budgetAmount");
-const monthExpense = document.getElementById("monthExpense");
-const remainingBudget = document.getElementById("remainingBudget");
-const budgetProgress = document.getElementById("budgetProgress");
-const budgetMessage = document.getElementById("budgetMessage");
-
 const exportCsvButton = document.getElementById("exportCsvButton");
 const importCsvInput = document.getElementById("importCsvInput");
 const exportJsonButton = document.getElementById("exportJsonButton");
@@ -70,13 +74,14 @@ const dataStatus = document.getElementById("dataStatus");
 
 const guideOverlay = document.getElementById("guideOverlay");
 const closeGuideButton = document.getElementById("closeGuideButton");
+const openGuideButton = document.getElementById("openGuideButton");
 
 let mainChart = null;
 let reminderTimerId = null;
 let selectedRange = "day";
 let selectedChartType = "bar";
-let selectedExpenseCategory = "食費";
-let selectedIncomeCategory = "おこづかい";
+let selectedRecordType = "expense";
+let selectedCategory = "食費";
 
 const expenseCategories = [
   { name: "食費", icon: "🍙" },
@@ -96,13 +101,15 @@ const incomeCategories = [
   { name: "その他", icon: "📝" }
 ];
 
-expenseDateInput.value = getTodayDateString();
-incomeDateInput.value = getTodayDateString();
+const expensePaymentMethods = ["PayPay", "現金", "クレジットカード", "交通系IC", "その他"];
+const incomePaymentMethods = ["現金", "PayPay", "銀行", "その他"];
+
+quickDateInput.value = getTodayDateString();
 customStartDateInput.value = getTodayDateString();
 customEndDateInput.value = getTodayDateString();
 
 setupGuide();
-renderCategoryButtons();
+setRecordType("expense");
 loadReminderSetting();
 loadBudgetSetting();
 render();
@@ -111,72 +118,63 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
 
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    showScreen(button.dataset.screen);
+  });
+});
+
 expenseModeButton.addEventListener("click", () => {
-  setInputMode("expense");
+  setRecordType("expense");
 });
 
 incomeModeButton.addEventListener("click", () => {
-  setInputMode("income");
+  setRecordType("income");
 });
 
-expenseForm.addEventListener("submit", (event) => {
+toggleDetailButton.addEventListener("click", () => {
+  detailFields.classList.toggle("hidden");
+
+  if (detailFields.classList.contains("hidden")) {
+    toggleDetailButton.textContent = "＋ 詳細を入力";
+  } else {
+    toggleDetailButton.textContent = "− 詳細を閉じる";
+  }
+});
+
+quickRecordForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const amount = Number(expenseAmountInput.value);
+  const amount = Number(quickAmountInput.value);
 
   if (!amount || amount <= 0) {
-    alert("支出の金額を正しく入力してください");
+    alert("金額を正しく入力してください");
     return;
   }
 
   const record = {
     id: crypto.randomUUID(),
-    type: "expense",
-    amount: amount,
-    category: selectedExpenseCategory,
-    paymentMethod: expensePaymentMethodInput.value,
-    date: expenseDateInput.value,
-    memo: expenseMemoInput.value.trim(),
+    type: selectedRecordType,
+    amount,
+    category: selectedCategory,
+    paymentMethod: quickPaymentMethodInput.value,
+    date: quickDateInput.value,
+    memo: quickMemoInput.value.trim(),
     createdAt: new Date().toISOString()
   };
 
   addRecord(record);
 
-  expenseForm.reset();
-  expenseDateInput.value = getTodayDateString();
-  selectedExpenseCategory = "食費";
-  renderCategoryButtons();
+  quickRecordForm.reset();
+  quickDateInput.value = getTodayDateString();
+  detailFields.classList.add("hidden");
+  toggleDetailButton.textContent = "＋ 詳細を入力";
+  setRecordType(selectedRecordType);
   showLastAdded(record);
 });
 
-incomeForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  const amount = Number(incomeAmountInput.value);
-
-  if (!amount || amount <= 0) {
-    alert("収入の金額を正しく入力してください");
-    return;
-  }
-
-  const record = {
-    id: crypto.randomUUID(),
-    type: "income",
-    amount: amount,
-    category: selectedIncomeCategory,
-    paymentMethod: incomePaymentMethodInput.value,
-    date: incomeDateInput.value,
-    memo: incomeMemoInput.value.trim(),
-    createdAt: new Date().toISOString()
-  };
-
-  addRecord(record);
-
-  incomeForm.reset();
-  incomeDateInput.value = getTodayDateString();
-  selectedIncomeCategory = "おこづかい";
-  renderCategoryButtons();
-  showLastAdded(record);
+showAllHistoryButton.addEventListener("click", () => {
+  showScreen("chartScreen");
 });
 
 rangeTabs.forEach((tab) => {
@@ -241,17 +239,6 @@ chartTypeTabs.forEach((tab) => {
   });
 });
 
-clearAllButton.addEventListener("click", () => {
-  const ok = confirm("本当にすべての記録を削除しますか？");
-
-  if (!ok) {
-    return;
-  }
-
-  localStorage.removeItem(STORAGE_KEY);
-  render();
-});
-
 saveBudgetButton.addEventListener("click", () => {
   const budget = Number(monthlyBudgetInput.value);
 
@@ -262,6 +249,17 @@ saveBudgetButton.addEventListener("click", () => {
 
   localStorage.setItem(BUDGET_KEY, String(budget));
   renderBudget();
+});
+
+clearAllButton.addEventListener("click", () => {
+  const ok = confirm("本当にすべての記録を削除しますか？");
+
+  if (!ok) {
+    return;
+  }
+
+  localStorage.removeItem(STORAGE_KEY);
+  render();
 });
 
 saveReminderButton.addEventListener("click", async () => {
@@ -293,10 +291,7 @@ testNotificationButton.addEventListener("click", async () => {
     return;
   }
 
-  showNotification(
-    "おこづかいメモ",
-    "今日使ったお金を記録しよう！"
-  );
+  showNotification("おこづかいメモ", "今日使ったお金を記録しよう！");
 });
 
 exportCsvButton.addEventListener("click", () => {
@@ -320,6 +315,32 @@ closeGuideButton.addEventListener("click", () => {
   guideOverlay.classList.remove("show");
 });
 
+openGuideButton.addEventListener("click", () => {
+  guideOverlay.classList.add("show");
+});
+
+function showScreen(screenId) {
+  [homeScreen, chartScreen, settingsScreen].forEach((screen) => {
+    screen.classList.remove("active-screen");
+  });
+
+  document.getElementById(screenId).classList.add("active-screen");
+
+  navButtons.forEach((button) => {
+    button.classList.remove("active");
+
+    if (button.dataset.screen === screenId) {
+      button.classList.add("active");
+    }
+  });
+
+  if (screenId === "chartScreen") {
+    renderRangeSummary();
+    renderHistory();
+    renderMainChart();
+  }
+}
+
 function setupGuide() {
   const hasSeenGuide = localStorage.getItem(GUIDE_KEY);
 
@@ -328,33 +349,54 @@ function setupGuide() {
   }
 }
 
-function setInputMode(mode) {
-  if (mode === "expense") {
+function setRecordType(type) {
+  selectedRecordType = type;
+
+  if (type === "expense") {
     expenseModeButton.classList.add("active");
     incomeModeButton.classList.remove("active");
-
-    expenseForm.classList.remove("hidden");
-    incomeForm.classList.add("hidden");
-    return;
+    quickRecordTitle.textContent = "支出を記録";
+    submitRecordButton.textContent = "支出を追加";
+    submitRecordButton.className = "primary-button expense-button";
+    paymentMethodLabel.textContent = "支払い方法";
+    selectedCategory = "食費";
+    setPaymentOptions(expensePaymentMethods);
+  } else {
+    incomeModeButton.classList.add("active");
+    expenseModeButton.classList.remove("active");
+    quickRecordTitle.textContent = "収入を記録";
+    submitRecordButton.textContent = "収入を追加";
+    submitRecordButton.className = "primary-button income-button";
+    paymentMethodLabel.textContent = "受け取り方法";
+    selectedCategory = "おこづかい";
+    setPaymentOptions(incomePaymentMethods);
   }
 
-  incomeModeButton.classList.add("active");
-  expenseModeButton.classList.remove("active");
+  renderCategoryButtons();
+}
 
-  incomeForm.classList.remove("hidden");
-  expenseForm.classList.add("hidden");
+function setPaymentOptions(options) {
+  quickPaymentMethodInput.innerHTML = "";
+
+  options.forEach((option) => {
+    const optionElement = document.createElement("option");
+    optionElement.value = option;
+    optionElement.textContent = option;
+    quickPaymentMethodInput.appendChild(optionElement);
+  });
 }
 
 function renderCategoryButtons() {
-  expenseCategoryButtons.innerHTML = "";
-  incomeCategoryButtons.innerHTML = "";
+  const categories = selectedRecordType === "expense" ? expenseCategories : incomeCategories;
 
-  expenseCategories.forEach((category) => {
+  categoryButtons.innerHTML = "";
+
+  categories.forEach((category) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "category-button";
 
-    if (category.name === selectedExpenseCategory) {
+    if (category.name === selectedCategory) {
       button.classList.add("active");
     }
 
@@ -364,33 +406,11 @@ function renderCategoryButtons() {
     `;
 
     button.addEventListener("click", () => {
-      selectedExpenseCategory = category.name;
+      selectedCategory = category.name;
       renderCategoryButtons();
     });
 
-    expenseCategoryButtons.appendChild(button);
-  });
-
-  incomeCategories.forEach((category) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "category-button";
-
-    if (category.name === selectedIncomeCategory) {
-      button.classList.add("active");
-    }
-
-    button.innerHTML = `
-      <span class="category-icon">${category.icon}</span>
-      <span>${category.name}</span>
-    `;
-
-    button.addEventListener("click", () => {
-      selectedIncomeCategory = category.name;
-      renderCategoryButtons();
-    });
-
-    incomeCategoryButtons.appendChild(button);
+    categoryButtons.appendChild(button);
   });
 }
 
@@ -432,74 +452,50 @@ function saveRecords(records) {
 }
 
 function render() {
-  renderTodayStatus();
-  renderRangeSummary();
+  renderMonthStatus();
   renderBudget();
+  renderRecentHistory();
+  renderRangeSummary();
   renderHistory();
   renderMainChart();
 }
 
-function renderTodayStatus() {
+function renderMonthStatus() {
   const records = getRecords();
-  const todayRecords = filterToday(records);
+  const monthRecords = filterThisMonth(records);
 
-  const incomeTotal = calculateIncome(todayRecords);
-  const expenseTotal = calculateExpense(todayRecords);
+  const incomeTotal = calculateIncome(monthRecords);
+  const expenseTotal = calculateExpense(monthRecords);
   const balance = incomeTotal - expenseTotal;
 
-  todayIncome.textContent = formatYen(incomeTotal);
-  todayExpense.textContent = formatYen(expenseTotal);
-  todayBalance.textContent = formatYen(balance);
+  monthIncome.textContent = formatYen(incomeTotal);
+  monthExpenseStatus.textContent = formatYen(expenseTotal);
+  monthBalance.textContent = formatYen(balance);
 
-  todayIncome.className = "income";
-  todayExpense.className = "expense";
+  monthIncome.className = "income";
+  monthExpenseStatus.className = "expense";
 
-  todayBalance.classList.remove("income", "expense");
+  monthBalance.classList.remove("income", "expense");
 
   if (balance > 0) {
-    todayBalance.classList.add("income");
+    monthBalance.classList.add("income");
   }
 
   if (balance < 0) {
-    todayBalance.classList.add("expense");
+    monthBalance.classList.add("expense");
   }
 
-  todayStatusBadge.classList.remove("done");
+  monthStatusBadge.classList.remove("done");
 
-  if (todayRecords.length > 0) {
-    todayStatusTitle.textContent = "今日は記録できています";
-    todayStatusBadge.textContent = `${todayRecords.length}件`;
-    todayStatusBadge.classList.add("done");
+  if (monthRecords.length > 0) {
+    monthStatusTitle.textContent = "今月は記録できています";
+    monthStatusBadge.textContent = `${monthRecords.length}件`;
+    monthStatusBadge.classList.add("done");
     return;
   }
 
-  todayStatusTitle.textContent = "今日はまだ記録がありません";
-  todayStatusBadge.textContent = "未記録";
-}
-
-function renderRangeSummary() {
-  const records = getRecords();
-  const filteredRecords = filterRecordsByRange(records, selectedRange);
-
-  const incomeTotal = calculateIncome(filteredRecords);
-  const expenseTotal = calculateExpense(filteredRecords);
-  const balance = incomeTotal - expenseTotal;
-
-  rangeIncome.textContent = formatYen(incomeTotal);
-  rangeExpense.textContent = formatYen(expenseTotal);
-  rangeBalance.textContent = formatYen(balance);
-
-  rangeDateText.textContent = getRangeDateText();
-
-  rangeBalance.classList.remove("income", "expense");
-
-  if (balance > 0) {
-    rangeBalance.classList.add("income");
-  }
-
-  if (balance < 0) {
-    rangeBalance.classList.add("expense");
-  }
+  monthStatusTitle.textContent = "今月はまだ記録がありません";
+  monthStatusBadge.textContent = "未記録";
 }
 
 function renderBudget() {
@@ -533,7 +529,6 @@ function renderBudget() {
   }
 
   const percent = Math.min((expense / budget) * 100, 100);
-
   budgetProgress.style.width = `${percent}%`;
 
   if (percent >= 100) {
@@ -551,21 +546,24 @@ function renderBudget() {
   budgetMessage.textContent = "今月の予算内におさまっています。";
 }
 
+function renderRecentHistory() {
+  const records = getSortedRecords().slice(0, 3);
+  renderHistoryCards(recentHistoryList, records, true);
+}
+
 function renderHistory() {
-  const records = getRecords();
+  renderHistoryCards(historyList, getSortedRecords(), false);
+}
 
-  const sortedRecords = [...records].sort((a, b) => {
-    return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
-  });
+function renderHistoryCards(container, records, isRecent) {
+  container.innerHTML = "";
 
-  historyList.innerHTML = "";
-
-  if (sortedRecords.length === 0) {
-    historyList.innerHTML = `<p class="small-text">まだ記録がありません。</p>`;
+  if (records.length === 0) {
+    container.innerHTML = `<p class="small-text">まだ記録がありません。</p>`;
     return;
   }
 
-  sortedRecords.forEach((record) => {
+  records.forEach((record) => {
     const card = document.createElement("div");
     const amountClass = record.type === "income" ? "income" : "expense";
     const borderClass = record.type === "income" ? "income-border" : "expense-border";
@@ -596,22 +594,52 @@ function renderHistory() {
           ${escapeHtml(record.date)} ・ ${typeText} ・ ${escapeHtml(record.paymentMethod)}
         </div>
 
-        <button class="delete-button" data-id="${record.id}">
-          削除
-        </button>
+        ${isRecent ? "" : `<button class="delete-button" data-id="${record.id}">削除</button>`}
       </div>
     `;
 
-    historyList.appendChild(card);
+    container.appendChild(card);
   });
 
-  const deleteButtons = document.querySelectorAll(".delete-button");
+  if (!isRecent) {
+    const deleteButtons = container.querySelectorAll(".delete-button");
 
-  deleteButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      deleteRecord(button.dataset.id);
+    deleteButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        deleteRecord(button.dataset.id);
+      });
     });
+  }
+}
+
+function getSortedRecords() {
+  return [...getRecords()].sort((a, b) => {
+    return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
   });
+}
+
+function renderRangeSummary() {
+  const records = getRecords();
+  const filteredRecords = filterRecordsByRange(records, selectedRange);
+
+  const incomeTotal = calculateIncome(filteredRecords);
+  const expenseTotal = calculateExpense(filteredRecords);
+  const balance = incomeTotal - expenseTotal;
+
+  rangeIncome.textContent = formatYen(incomeTotal);
+  rangeExpense.textContent = formatYen(expenseTotal);
+  rangeBalance.textContent = formatYen(balance);
+  rangeDateText.textContent = getRangeDateText();
+
+  rangeBalance.classList.remove("income", "expense");
+
+  if (balance > 0) {
+    rangeBalance.classList.add("income");
+  }
+
+  if (balance < 0) {
+    rangeBalance.classList.add("expense");
+  }
 }
 
 function renderMainChart() {
@@ -719,7 +747,7 @@ function renderPieChart(records) {
   mainChart = new Chart(mainChartCanvas, {
     type: "doughnut",
     data: {
-      labels: labels,
+      labels,
       datasets: [
         {
           label: "カテゴリー別支出",
@@ -784,10 +812,7 @@ function getCurrentRangeDates() {
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
-    return {
-      start,
-      end
-    };
+    return { start, end };
   }
 
   if (selectedRange === "week") {
@@ -1021,15 +1046,7 @@ function exportCsv() {
     return;
   }
 
-  const header = [
-    "日付",
-    "収支",
-    "金額",
-    "カテゴリー",
-    "支払い方法",
-    "メモ",
-    "作成日時"
-  ];
+  const header = ["日付", "収支", "金額", "カテゴリー", "支払い方法", "メモ", "作成日時"];
 
   const rows = records.map((record) => {
     return [
@@ -1043,10 +1060,7 @@ function exportCsv() {
     ];
   });
 
-  const csvText = [
-    header,
-    ...rows
-  ]
+  const csvText = [header, ...rows]
     .map((row) => row.map(escapeCsvValue).join(","))
     .join("\n");
 
@@ -1055,9 +1069,7 @@ function exportCsv() {
     type: "text/csv;charset=utf-8"
   });
 
-  const fileName = `okozukai-records-${getTodayDateString()}.csv`;
-
-  downloadBlob(blob, fileName);
+  downloadBlob(blob, `okozukai-records-${getTodayDateString()}.csv`);
 
   dataStatus.textContent = "CSVをエクスポートしました。";
 }
@@ -1095,19 +1107,14 @@ function importCsv(event) {
         return;
       }
 
-      const ok = confirm(
-        `CSVから${records.length}件読み込みます。現在の記録に追加しますか？`
-      );
+      const ok = confirm(`CSVから${records.length}件読み込みます。現在の記録に追加しますか？`);
 
       if (!ok) {
         importCsvInput.value = "";
         return;
       }
 
-      const currentRecords = getRecords();
-      const mergedRecords = [...currentRecords, ...records];
-
-      saveRecords(mergedRecords);
+      saveRecords([...getRecords(), ...records]);
       render();
 
       dataStatus.textContent = `CSVから${records.length}件インポートしました。`;
@@ -1133,15 +1140,11 @@ function exportJsonBackup() {
     }
   };
 
-  const jsonText = JSON.stringify(backupData, null, 2);
-
-  const blob = new Blob([jsonText], {
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], {
     type: "application/json;charset=utf-8"
   });
 
-  const fileName = `okozukai-backup-${getTodayDateString()}.json`;
-
-  downloadBlob(blob, fileName);
+  downloadBlob(blob, `okozukai-backup-${getTodayDateString()}.json`);
 
   dataStatus.textContent = "JSONをエクスポートしました。";
 }
@@ -1165,9 +1168,7 @@ function importJsonBackup(event) {
         return;
       }
 
-      const ok = confirm(
-        "現在の記録をJSONファイルの内容で置き換えます。よろしいですか？"
-      );
+      const ok = confirm("現在の記録をJSONファイルの内容で置き換えます。よろしいですか？");
 
       if (!ok) {
         importJsonInput.value = "";
@@ -1230,16 +1231,14 @@ function csvRowToRecord(header, row) {
   const memo = getCsvValue(header, row, "メモ");
   const createdAt = getCsvValue(header, row, "作成日時");
 
-  const type = typeText === "収入" || typeText === "income" ? "income" : "expense";
-
   return {
     id: crypto.randomUUID(),
-    type: type,
-    amount: amount,
-    category: category,
-    paymentMethod: paymentMethod,
-    date: date,
-    memo: memo,
+    type: typeText === "収入" || typeText === "income" ? "income" : "expense",
+    amount,
+    category,
+    paymentMethod,
+    date,
+    memo,
     createdAt: createdAt || new Date().toISOString()
   };
 }
@@ -1340,11 +1339,7 @@ function isValidRecord(record) {
 function escapeCsvValue(value) {
   const text = String(value ?? "");
 
-  if (
-    text.includes(",") ||
-    text.includes("\n") ||
-    text.includes('"')
-  ) {
+  if (text.includes(",") || text.includes("\n") || text.includes('"')) {
     return `"${text.replaceAll('"', '""')}"`;
   }
 
@@ -1413,14 +1408,12 @@ function showNotification(title, body) {
   navigator.serviceWorker.getRegistration().then((registration) => {
     if (registration) {
       registration.showNotification(title, {
-        body: body,
+        body,
         icon: "icon.png",
         badge: "icon.png"
       });
     } else {
-      new Notification(title, {
-        body: body
-      });
+      new Notification(title, { body });
     }
   });
 }
@@ -1446,11 +1439,7 @@ function scheduleDailyReminder(time) {
   const delay = getDelayUntilNextTime(time);
 
   reminderTimerId = setTimeout(() => {
-    showNotification(
-      "おこづかいメモ",
-      "今日使ったお金を記録しよう！"
-    );
-
+    showNotification("おこづかいメモ", "今日使ったお金を記録しよう！");
     scheduleDailyReminder(time);
   }, delay);
 }
